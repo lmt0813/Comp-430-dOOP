@@ -1,3 +1,3 @@
-package tokenization_example;
+package tokenizer;
 
 public record MinusToken() implements Token {}

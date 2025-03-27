@@ -1,1 +1,1 @@
-public record MultOp() implements Op {}
+public record MinusOp() implements Op {}

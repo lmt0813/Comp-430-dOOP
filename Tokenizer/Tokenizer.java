@@ -56,6 +56,7 @@ public class Tokenizer {
             case "method": return Optional.of(new MethodToken());
             case "return": return Optional.of(new ReturnToken());
             case "init": return Optional.of(new InitToken());
+            case "String": return Optional.of(new StringToken());
             case "boolean": return Optional.of(new BooleanToken());
             case "true": return Optional.of(new BooleanLiteralToken(true));
             case "false": return Optional.of(new BooleanLiteralToken(false));

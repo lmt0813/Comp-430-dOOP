@@ -46,29 +46,21 @@ public class Tokenizer {
                 chars += input.charAt(position);
                 position++;
             }
-            if (chars.equals("println")) {
-                return Optional.of(new PrintlnToken());
-            } else if (chars.equals("class")) {
-                return Optional.of(new ClassToken());
-            } else if (chars.equals("Void")) {
-                return Optional.of(new VoidToken());
-            } else if (chars.equals("break")) {
-                return Optional.of(new BreakToken());
-            } else if (chars.equals("super")) {
-                return Optional.of(new SuperToken());
-            } else if (chars.equals("extends")) {
-                return Optional.of(new ExtendsToken());
-            } else if (chars.equals("method")) {
-                return Optional.of(new MethodToken());
-            } else if (chars.equals("return")) {
-                return Optional.of(new ReturnToken());
-            } else if (chars.equals("init")) {
-                return Optional.of(new InitToken());
-            } else if (chars.equals("boolean")) {
-                return Optional.of(new BooleanToken());
-            } else{
-                return Optional.of(new IdentifierToken(chars));
-            }
+        switch (chars) {
+            case "println": return Optional.of(new PrintlnToken());
+            case "class": return Optional.of(new ClassToken());
+            case "Void": return Optional.of(new VoidToken());
+            case "break": return Optional.of(new BreakToken());
+            case "super": return Optional.of(new SuperToken());
+            case "extends": return Optional.of(new ExtendsToken());
+            case "method": return Optional.of(new MethodToken());
+            case "return": return Optional.of(new ReturnToken());
+            case "init": return Optional.of(new InitToken());
+            case "boolean": return Optional.of(new BooleanToken());
+            case "true": return Optional.of(new BooleanLiteralToken(true));
+            case "false": return Optional.of(new BooleanLiteralToken(false));
+            default: return Optional.of(new IdentifierToken(chars)); // If not reserved, it's an identifier
+        }
         } else {
             return Optional.empty();
         }

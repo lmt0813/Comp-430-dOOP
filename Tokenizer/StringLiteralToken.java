@@ -1,0 +1,1 @@
+public record StringLiteralToken(String value) implements Token{}

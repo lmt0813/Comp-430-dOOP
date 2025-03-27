@@ -1,1 +1,1 @@
-public record BooleanToken(Boolean value) implements Token{}
+public record BooleanToken() implements Token{}

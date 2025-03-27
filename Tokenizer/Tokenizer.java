@@ -81,6 +81,45 @@ public class Tokenizer {
         } else if (input.startsWith(")", position)) {
             position++;
             return Optional.of(new RParenToken());
+        } else if (input.startsWith("{", position)) {
+            position++;
+            return Optional.of(new LBraceToken());
+        } else if (input.startsWith("}", position)) {
+            position++;
+            return Optional.of(new RBraceToken());
+        } else if (input.startsWith(";", position)) {
+            position++;
+            return Optional.of(new SemiColonToken());
+        } else if (input.startsWith(".", position)) {
+            position++;
+            return Optional.of(new PeriodToken());
+        } else if (input.startsWith("+", position)) {
+            position++;
+            return Optional.of(new PlusToken());
+        } else if (input.startsWith("-", position)) {
+            position++;
+            return Optional.of(new MinusToken());
+        } else if (input.startsWith("*", position)) {
+            position++;
+            return Optional.of(new MultToken());
+        } else if (input.startsWith("/", position)) {
+            position++;
+            return Optional.of(new DivToken());
+        } else if (input.startsWith("=", position)) {
+            position++;
+            return Optional.of(new EqualsToken());
+        } else if (input.startsWith("==", position)) {
+            position += 2;
+            return Optional.of(new DoubleEqualToken());
+        } else if (input.startsWith("!=", position)) {
+            position += 2;
+            return Optional.of(new NotEqualToken());
+        } else if (input.startsWith(">=", position)) {
+            position += 2;
+            return Optional.of(new GreaterThanEqualToken());
+        } else if (input.startsWith("<=", position)) {
+            position += 2;
+            return Optional.of(new LessThanEqualToken());
         } else {
             return Optional.empty();
         }

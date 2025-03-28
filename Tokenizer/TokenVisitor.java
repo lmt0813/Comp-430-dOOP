@@ -11,4 +11,6 @@ public interface TokenVisitor<A> {
     public A visitNewToken();
     public A visitExtendsToken();
     public A visitElseToken();
+    public A visitClassToken();
+    public A visitMethodToken();
 }

@@ -1,1 +1,0 @@
-public record BooleanLiteralToken(boolean value) implements Token{}

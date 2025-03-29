@@ -1,1 +1,0 @@
-public record NotEqualToken() implements Token {}

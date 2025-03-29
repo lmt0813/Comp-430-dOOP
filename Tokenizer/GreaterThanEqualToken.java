@@ -1,1 +1,0 @@
-public record GreaterThanEqualToken() implements Token {}

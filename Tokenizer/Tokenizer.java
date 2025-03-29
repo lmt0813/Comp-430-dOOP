@@ -8,18 +8,18 @@ public class Tokenizer {
     public Tokenizer(final String input) {
         this.input = input;
         position = 0;
-    }
+    } //end Tokenizer
 
     public int getPosition() {
         return position;
-    }
+    } //end getPosition
     
     public void skipWhitespace() {
         while (position < input.length() &&
                Character.isWhitespace(input.charAt(position))) {
             position++;
         }
-    }
+    }//end skipWhitespace
     
     public Optional<Token> tryReadIntegerToken() {
         String digits = "";
@@ -34,7 +34,7 @@ public class Tokenizer {
         } else {
             return Optional.of(new IntegerToken(Integer.parseInt(digits)));
         }
-    } // tryReadIntegerToken
+    } //end tryReadIntegerToken
 
     public Optional<Token> tryReadIdentifierOrReservedWordToken() {
         if (position < input.length() &&
@@ -65,10 +65,13 @@ public class Tokenizer {
         } else {
             return Optional.empty();
         }
-    } // tryReadIdentifierOrReservedWordToken
+    } //end tryReadIdentifierOrReservedWordToken
 
     public Optional<Token> tryReadSymbol(){
-        if (input.startsWith("(", position)) {
+        if (input.startsWith("\"", position)) {
+            position++;
+            return Optional.of(new LParenToken());
+        } else if (input.startsWith("(", position)) {
             position++;
             return Optional.of(new LParenToken());
         } else if (input.startsWith(")", position)) {
@@ -98,9 +101,6 @@ public class Tokenizer {
         } else if (input.startsWith("/", position)) {
             position++;
             return Optional.of(new DivToken());
-        } else if (input.startsWith("=", position)) {
-            position++;
-            return Optional.of(new EqualsToken());
         } else if (input.startsWith("==", position)) {
             position += 2;
             return Optional.of(new DoubleEqualToken());
@@ -113,8 +113,32 @@ public class Tokenizer {
         } else if (input.startsWith("<=", position)) {
             position += 2;
             return Optional.of(new LessThanEqualToken());
+        } else if (input.startsWith("=", position)) {
+            position++;
+            return Optional.of(new EqualsToken());
         } else {
             return Optional.empty();
         }
-    }
+    }//end try read symbol
+
+    public Token readToken() throws TokenizerException {
+        Optional<Token> token;
+        if ((token = tryReadIntegerToken()).isPresent() ||
+            (token = tryReadSymbol()).isPresent() ||
+            (token = tryReadIdentifierOrReservedWordToken()).isPresent()) {
+            return token.get();
+        } else {
+            throw new TokenizerException("Invalid char: " + input.charAt(position));
+        }
+    } //end readToken
+        
+    public ArrayList<Token> tokenize() throws TokenizerException {
+        final ArrayList<Token> tokens = new ArrayList<Token>();
+        skipWhitespace();
+        while (position < input.length()) {
+            tokens.add(readToken());
+            skipWhitespace();
+        }
+        return tokens;
+    } //end tokenize
 }

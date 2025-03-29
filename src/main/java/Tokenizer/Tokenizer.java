@@ -121,12 +121,8 @@ public class Tokenizer {
         } else {
             return Optional.empty();
         }
-<<<<<<< HEAD:Tokenizer/Tokenizer.java
     }//end try read symbol
 
-=======
-    }
->>>>>>> 78a8b44a85a0e428d37ad3b3ae4a3ac3a4ce812e:src/main/java/Tokenizer/Tokenizer.java
     public Token readToken() throws TokenizerException {
         Optional<Token> token;
         if ((token = tryReadIntegerToken()).isPresent() ||
@@ -136,13 +132,9 @@ public class Tokenizer {
         } else {
             throw new TokenizerException("Invalid char: " + input.charAt(position));
         }
-<<<<<<< HEAD:Tokenizer/Tokenizer.java
     } //end readToken
         
-=======
-    } // readToken
-    
->>>>>>> 78a8b44a85a0e428d37ad3b3ae4a3ac3a4ce812e:src/main/java/Tokenizer/Tokenizer.java
+
     public ArrayList<Token> tokenize() throws TokenizerException {
         final ArrayList<Token> tokens = new ArrayList<Token>();
         skipWhitespace();
@@ -151,9 +143,5 @@ public class Tokenizer {
             skipWhitespace();
         }
         return tokens;
-<<<<<<< HEAD:Tokenizer/Tokenizer.java
     } //end tokenize
-=======
-    } // tokenize
->>>>>>> 78a8b44a85a0e428d37ad3b3ae4a3ac3a4ce812e:src/main/java/Tokenizer/Tokenizer.java
 }

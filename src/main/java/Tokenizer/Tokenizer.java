@@ -51,7 +51,7 @@ public class Tokenizer {
         switch (chars) {
             case "println": return Optional.of(new PrintlnToken());
             case "class": return Optional.of(new ClassToken());
-            case "Void": return Optional.of(new VoidToken());
+            case "void": return Optional.of(new VoidToken());
             case "break": return Optional.of(new BreakToken());
             case "super": return Optional.of(new SuperToken());
             case "extends": return Optional.of(new ExtendsToken());
@@ -62,6 +62,11 @@ public class Tokenizer {
             case "boolean": return Optional.of(new BooleanToken());
             case "true": return Optional.of(new BooleanLiteralToken(true));
             case "false": return Optional.of(new BooleanLiteralToken(false));
+            case "if": return Optional.of(new IfToken());
+            case "else": return Optional.of(new ElseToken());
+            case "new": return Optional.of(new NewToken());
+            case "while": return Optional.of(new WhileToken());
+            case "int" : return Optional.of(new IntToken());
             default: return Optional.of(new IdentifierToken(chars)); // If not reserved, it's an identifier
         }
         } else {
@@ -70,9 +75,9 @@ public class Tokenizer {
     } //end tryReadIdentifierOrReservedWordToken
 
     public Optional<Token> tryReadSymbol(){
-        if (input.startsWith("\"", position)) {
+        if (input.startsWith(",", position)) {
             position++;
-            return Optional.of(new LParenToken());
+            return Optional.of(new CommaToken());
         } else if (input.startsWith("(", position)) {
             position++;
             return Optional.of(new LParenToken());

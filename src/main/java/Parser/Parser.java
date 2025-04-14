@@ -1,3 +1,11 @@
+package Parser;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import Tokenizer.*;
+
 public class Parser {
     public final Token[] tokens;
     public Parser(final Token[] tokens) {
@@ -58,7 +66,14 @@ public class Parser {
     //     return new MultExpParser().parse(startPos);
     // }
 
-    // primaryExp ::= IDENTIFIER | INTEGER | `(` exp `)`
+    /*primary_exp ::=
+        var | str | i | Variables, strings, and integers are expressions
+        `(` exp `)` | Parenthesized expressions
+        `this` | Refers to my instance
+        `true` | `false` | Booleans
+        `println` `(` exp `)` | Prints something to the terminal
+        `new` classname `(` comma_exp `)` Creates a new object
+     */
     public ParseResult<Exp> primaryExp(final int startPos) throws ParseException {
         final Token t = getToken(startPos);
         if (t instanceof IdentifierToken id) {
@@ -67,24 +82,40 @@ public class Parser {
             return new ParseResult<Exp>(new IntExp(i.value), startPos + 1);
         } else if (t instanceof LParenToken) {
             final ParseResult<Exp> e = exp(startPos + 1);
-            assertTokenIs(e.nextPos, new RParenToken());
-            return new ParseResult<Exp>(e.result, e.nextPos + 1);
+            assertTokenIs(e.nextPos(), new RParenToken());
+            return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
         } else {
             throw new ParseException("Expected primary expression at position: " + startPos);
         }
     } // primaryExp
     
-    // multExp ::= primaryExp ((`*` | `/`) primaryExp)*
+    //call_exp ::= primary_exp (`.` methodname `(` comma_exp `)`)*
+    public ParseResult<Exp> callExp(final int startPos) throws ParseException{
+        final ParseResult<Exp> m = primaryExp(startPos);
+        Exp result = m.result();
+        boolean shouldRun = true;
+        int pos = m.nextPos();
+        while (shouldRun) {
+            try {
+                final Token t = getToken(pos);
+            } catch (ParseException e) {
+                shouldRun = false;
+            }
+        }
+        return new ParseResult<Exp>(result, pos);
+    }//callExp
+
+    // mult_exp ::= call_exp ((`*` | `/`) call_exp)*
     public ParseResult<Exp> multExp(final int startPos) throws ParseException {
         final ParseResult<Exp> m = primaryExp(startPos);
-        Exp result = m.result;
+        Exp result = m.result();
         boolean shouldRun = true;
-        int pos = m.nextPos;
+        int pos = m.nextPos();
         while (shouldRun) {
             try {
                 final Token t = getToken(pos);
                 final Op op;
-                if (t instanceof StarToken) {
+                if (t instanceof MultToken) {
                     op = new MultOp();
                 } else if (t instanceof DivToken) {
                     op = new DivOp();
@@ -92,8 +123,8 @@ public class Parser {
                     throw new ParseException("Expected * or /");
                 }
                 final ParseResult<Exp> m2 = primaryExp(pos + 1);
-                result = new BinOpExp(result, op, m2.result);
-                pos = m2.nextPos;
+                result = new BinOpExp(result, op, m2.result());
+                pos = m2.nextPos();
             } catch (ParseException e) {
                 shouldRun = false;
             }
@@ -101,12 +132,12 @@ public class Parser {
         return new ParseResult<Exp>(result, pos);
     }        
 
-    // addExp ::= multExp ((`+` | `-`) multExp)*
+    // add_exp ::= mult_exp ((`+` | `-`) mult_exp)*
     public ParseResult<Exp> addExp(final int startPos) throws ParseException {
         final ParseResult<Exp> m = multExp(startPos);
-        Exp result = m.result;
+        Exp result = m.result();
         boolean shouldRun = true;
-        int pos = m.nextPos;
+        int pos = m.nextPos();
         while (shouldRun) {
             try {
                 final Token t = getToken(pos);
@@ -120,7 +151,7 @@ public class Parser {
                 }
                 final ParseResult<Exp> m2 = multExp(pos + 1);
                 result = new BinOpExp(result, op, m2.result);
-                pos = m2.nextPos;
+                pos = m2.nextPos();
             } catch (ParseException e) {
                 shouldRun = false;
             }
@@ -140,43 +171,43 @@ public class Parser {
         }
     } // assertTokenIs
         
-    // id ~ EqualsToken ~ exp ~ SemicolonToken ^^ {
-    //   case name ~ _ ~ e ~ _ => AssignStmt(name, e)
-    // } |
-    // PrintToken ~> exp <~ SemicolonToken ^^ PrintStmt.apply
-
-    //
-    // stmt ::= IDENTIFIER `=` exp `;` |
-    //          `print` exp `;` |
-    //          `return` [exp] `;`
-    //    
+    /*stmt ::= exp `;` | Expression statements
+     	vardec `;` | Variable declaration
+     	var `=` exp `;` | Assignment
+     	`while` `(` exp `)` stmt | while loops
+     	`break` `;` | break
+     	`return` [exp] `;` | return, possibly void
+     	if with optional else
+     	`if` `(` exp `)` stmt [`else` stmt] |
+     	`{` stmt* `}` Block     
+    */
     public ParseResult<Stmt> stmt(final int startPos) throws ParseException {
         final Token token = readToken(startPos);
         if (token instanceof IdentifierToken id) {
             String name = id.name;
             assertTokenIs(startPos + 1, new EqualsToken());
             ParseResult<Exp> expression = exp(startPos + 2);
-            assertTokenIs(expression.nextPos, new SemicolonToken());
-            AssignStmt assign = new AssignStmt(name, expression.result);
-            return new ParseResult<Stmt>(assign, expression.nextPos + 1);
+            assertTokenIs(expression.nextPos(), new SemiColonToken());
+            AssignStmt assign = new AssignStmt(name, expression.result());
+            return new ParseResult<Stmt>(assign, expression.nextPos() + 1);
         } else if (token instanceof PrintToken) {
             ParseResult<Exp> expression = exp(startPos + 1);
-            assertTokenIs(expression.nextPos, new SemicolonToken());
-            PrintStmt print = new PrintStmt(expression.result);
-            return new ParseResult<Stmt>(print, expression.nextPos + 1);
+            assertTokenIs(expression.nextPos(), new SemiColonToken());
+            PrintStmt print = new PrintStmt(expression.result());
+            return new ParseResult<Stmt>(print, expression.nextPos() + 1);
         } else if (token instanceof ReturnToken) {
             ParseResult<Optional<Exp>> opExpression;
             try {
                 ParseResult<Exp> expression = exp(startPos + 1);
-                opExpression = new ParseResult<Optional<Exp>>(Optional.of(expression.result),
-                                                              expression.nextPos);
+                opExpression = new ParseResult<Optional<Exp>>(Optional.of(expression.result()),
+                                                              expression.nextPos());
             } catch (ParseException e) {
                 opExpression = new ParseResult<Optional<Exp>>(Optional.empty(),
                                                               startPos + 1);
             }
-            assertTokenIs(opExpression.nextPos, new SemicolonToken());
-            return new ParseResult<Stmt>(new ReturnStmt(opExpression.result),
-                                         opExpression.nextPos + 1);
+            assertTokenIs(opExpression.nextPos(), new SemiColonToken());
+            return new ParseResult<Stmt>(new ReturnStmt(opExpression.result()),
+                                         opExpression.nextPos() + 1);
         } else {
             throw new ParseException("Expected statement; got: " + token);
         }
@@ -190,8 +221,8 @@ public class Parser {
         while (shouldRun) {
             try {
                 final ParseResult<Stmt> stmtRes = stmt(pos);
-                stmts.add(stmtRes.result);
-                pos = stmtRes.nextPos;
+                stmts.add(stmtRes.result());
+                pos = stmtRes.nextPos();
             } catch (ParseException e) {
                 shouldRun = false;
             }
@@ -201,10 +232,10 @@ public class Parser {
 
     public Program parseWholeProgram() throws ParseException {
         final ParseResult<Program> p = program(0);
-        if (p.nextPos == tokens.length) {
-            return p.result;
+        if (p.nextPos() == tokens.length) {
+            return p.result();
         } else {
-            throw new ParseException("Invalid token at position: " + p.nextPos);
+            throw new ParseException("Invalid token at position: " + p.nextPos());
         }
     } // parseWholeProgram
 }

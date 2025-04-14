@@ -1,3 +1,3 @@
 package Parser;
 
-public record IdExp(string name) implements Exp {} 
+public record IdExp(String name) implements Exp {} 

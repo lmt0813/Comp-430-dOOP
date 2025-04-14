@@ -222,6 +222,9 @@ public class Parser {
             assertTokenIs(opExpression.nextPos(), new SemiColonToken());
             return new ParseResult<Stmt>(new ReturnStmt(opExpression.result()),
                                          opExpression.nextPos() + 1);
+        } else if (token instanceof BreakToken &&
+            readToken(startPos + 1) instanceof SemiColonToken) {
+            return new ParseResult<>(new BreakStmt(), startPos + 2);
         } else {
             throw new ParseException("Expected statement; got: " + token);
         }

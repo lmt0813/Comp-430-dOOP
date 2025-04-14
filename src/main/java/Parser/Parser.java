@@ -26,24 +26,20 @@ public class Parser {
         Exp result = m.result();
         boolean shouldRun = true;
         int pos = m.nextPos();
-        while (shouldRun) {
+        while(shouldRun) {
             try {
-                final Token t = getToken(pos);
-                final Exp exp;
+                Token t = getToken(pos);
                 if (t instanceof CommaToken) {
-
-                } else {
-                    throw new ParseException("Expected * or /");
+                    final ParseResult<Exp> m2 = commaExp(pos + 1);
+                    result = m2.result();
+                    pos = m2.nextPos();
                 }
-                final ParseResult<Exp> m2 = commaExp(pos + 1);
-                pos = m2.nextPos();
             } catch (ParseException e) {
                 shouldRun = false;
             }
         }
         return new ParseResult<Exp>(result, pos);
-        return m;
-    }//commaExp
+        }//commaExp
 
     /*primary_exp ::=
         var | str | i | Variables, strings, and integers are expressions
@@ -70,10 +66,31 @@ public class Parser {
             final ParseResult<Exp> e = exp(startPos + 1);
             assertTokenIs(e.nextPos(), new RParenToken());
             return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
-        } else if(t instanceof BooleanLiteralToken){
-            return new ParseResult<Exp>(new BooleanExp(b.value), startPos + 1);
-        } else if(t instanceof PrintlnToken){
+        } else if (t instanceof ThisToken) {
+            return new ParseResult<Exp>(new ThisExp(), startPos + 1);
+    
+        } else if (t instanceof BooleanToken b) {
+            if(b.value == true){
+                return new ParseResult<Exp>(new BooleanExp(true), startPos + 1);
+            } else {
+                return new ParseResult<Exp>(new BooleanExp(false), startPos + 1);
+            }
 
+        } else if (t instanceof PrintlnToken) {
+            assertTokenIs(startPos + 1, new LParenToken());
+            final ParseResult<Exp> inner = exp(startPos + 2);
+            assertTokenIs(inner.nextPos(), new RParenToken());
+            return new ParseResult<Exp>(new PrintExp(inner.result()), inner.nextPos() + 1);
+    
+        } else if (t instanceof NewToken) {
+            final Token next = getToken(startPos + 1);
+            if (!(next instanceof IdentifierToken id)) {
+                throw new ParseException("Expected class name after `new`");
+            }
+            assertTokenIs(startPos + 2, new LParenToken());
+            final ParseResult<Exp> m = commaExp(startPos + 3);
+            assertTokenIs(m.nextPos(), new RParenToken());
+            return new ParseResult<Exp>(new Exp(id.name, m.result()),m.nextPos() + 1);
         } else {
             throw new ParseException("Expected primary expression at position: " + startPos);
         }
@@ -85,19 +102,15 @@ public class Parser {
         Exp result = m.result();
         boolean shouldRun = true;
         int pos = m.nextPos();
-        while(shouldRun){
+        while (shouldRun) {
             try {
-                final Token t = getToken(pos);
-                final Exp methodName;
-                if(t instanceof PeriodToken){
-                    pos = m.nextPos();
-                    methodName = ;
-                } else {    
-                    throw new ParseException("Expected methodName after period");
-                }
-                final ParseResult<Exp> m2 = commaExp(pos + 1);
-                result = new callExp(result, methodName, m2.result());
-                pos = m2.nextPos();
+                final Token dotToken = getToken(pos);
+                final IdentifierToken method = getToken(pos + 1);
+                assertTokenIs(pos + 2, new LParenToken());
+                ParseResult<Exp> m2 = commaExp(pos + 3);
+                assertTokenIs(m2.nextPos(), new RParenToken());
+                result = new callExp(result, method.name, m2.result());
+                pos = m2.nextPos() + 1;
             } catch (ParseException e) {
                 shouldRun = false;
             }

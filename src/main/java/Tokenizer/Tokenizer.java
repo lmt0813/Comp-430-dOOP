@@ -67,6 +67,7 @@ public class Tokenizer {
             case "new": return Optional.of(new NewToken());
             case "while": return Optional.of(new WhileToken());
             case "int" : return Optional.of(new IntToken());
+            case "this" : return Optional.of(new ThisToken());
             default: return Optional.of(new IdentifierToken(chars)); // If not reserved, it's an identifier
         }
         } else {

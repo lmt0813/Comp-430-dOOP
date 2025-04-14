@@ -20,51 +20,30 @@ public class Parser {
         }
     } // readToken
 
-    // public abstract class OperatorParser {
-    //     public abstract ParseResult<Exp> oneLevelUp(final int startPos) throws ParseException;
-    //     public abstract Optional<Op> theOperator(final Token token);
+    //comma_exp ::= [exp (`,` exp)*]
+    public ParseResult<Exp> commaExp(final int startPos) throws ParseException{
+        final ParseResult<Exp> m = exp(startPos);
+        Exp result = m.result();
+        boolean shouldRun = true;
+        int pos = m.nextPos();
+        while (shouldRun) {
+            try {
+                final Token t = getToken(pos);
+                final Exp exp;
+                if (t instanceof CommaToken) {
 
-    //     public ParseResult<Exp> parse(final int startPos) throws ParseException {
-    //         final ParseResult<Exp> m = oneLevelUp(startPos);
-    //         Exp result = m.result;
-    //         boolean shouldRun = true;
-    //         int pos = m.nextPos;
-    //         while (shouldRun) {
-    //             try {
-    //                 final Token t = getToken(pos);
-    //                 final Optional<Op> op = theOperator(t);
-    //                 if (op.isEmpty()) {
-    //                     throw new ParseException("Wrong operator");
-    //                 }
-    //                 final ParseResult<Exp> m2 = oneLevelUp(pos + 1);
-    //                 result = new BinOpExp(result, op, m2.result);
-    //                 pos = m2.nextPos;
-    //             } catch (ParseException e) {
-    //                 shouldRun = false;
-    //             }
-    //         }
-    //         return new ParseResult<Exp>(result, pos);
-    //     } // parse
-    // } // OperatorParser
-
-    // public class MultExpParser extends OperatorParser {
-    //     public ParseResult<Exp> oneLevelUp(final int startPos) throws ParseException {
-    //         return primaryExp(startPos);
-    //     }
-    //     public Optional<Op> theOperator(final Token token) {
-    //         if (token instanceof PlusToken) {
-    //             return Optional.of(new PlusOp());
-    //         } else if (token instanceof MinusToken) {
-    //             return Optional.of(new MinusOp());
-    //         } else {
-    //             return Optional.empty();
-    //         }
-    //     }
-    // } // MultExpParser
-
-    // public ParseResult<Exp> multExp(final int startPos) throws ParseException {
-    //     return new MultExpParser().parse(startPos);
-    // }
+                } else {
+                    throw new ParseException("Expected * or /");
+                }
+                final ParseResult<Exp> m2 = commaExp(pos + 1);
+                pos = m2.nextPos();
+            } catch (ParseException e) {
+                shouldRun = false;
+            }
+        }
+        return new ParseResult<Exp>(result, pos);
+        return m;
+    }//commaExp
 
     /*primary_exp ::=
         var | str | i | Variables, strings, and integers are expressions
@@ -77,13 +56,24 @@ public class Parser {
     public ParseResult<Exp> primaryExp(final int startPos) throws ParseException {
         final Token t = getToken(startPos);
         if (t instanceof IdentifierToken id) {
-            return new ParseResult<Exp>(new IdExp(id.name), startPos + 1);
+            t = getToken(startPos + 1)
+            if(t instanceof LParenToken){
+                final ParseResult<Exp> e = commaExp(startPos + 1);
+                assertTokenIs(e.nextPos(), new RParenToken());
+                return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
+            }else {
+                return new ParseResult<Exp>(new IdExp(id.name), startPos + 1);
+            }
         } else if (t instanceof IntegerToken i) {
             return new ParseResult<Exp>(new IntExp(i.value), startPos + 1);
         } else if (t instanceof LParenToken) {
             final ParseResult<Exp> e = exp(startPos + 1);
             assertTokenIs(e.nextPos(), new RParenToken());
             return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
+        } else if(t instanceof BooleanLiteralToken){
+            return new ParseResult<Exp>(new BooleanExp(b.value), startPos + 1);
+        } else if(t instanceof PrintlnToken){
+
         } else {
             throw new ParseException("Expected primary expression at position: " + startPos);
         }
@@ -95,9 +85,19 @@ public class Parser {
         Exp result = m.result();
         boolean shouldRun = true;
         int pos = m.nextPos();
-        while (shouldRun) {
+        while(shouldRun){
             try {
                 final Token t = getToken(pos);
+                final Exp methodName;
+                if(t instanceof PeriodToken){
+                    pos = m.nextPos();
+                    methodName = ;
+                } else {    
+                    throw new ParseException("Expected methodName after period");
+                }
+                final ParseResult<Exp> m2 = commaExp(pos + 1);
+                result = new callExp(result, methodName, m2.result());
+                pos = m2.nextPos();
             } catch (ParseException e) {
                 shouldRun = false;
             }
@@ -107,7 +107,7 @@ public class Parser {
 
     // mult_exp ::= call_exp ((`*` | `/`) call_exp)*
     public ParseResult<Exp> multExp(final int startPos) throws ParseException {
-        final ParseResult<Exp> m = primaryExp(startPos);
+        final ParseResult<Exp> m = callExp(startPos);
         Exp result = m.result();
         boolean shouldRun = true;
         int pos = m.nextPos();
@@ -122,7 +122,7 @@ public class Parser {
                 } else {
                     throw new ParseException("Expected * or /");
                 }
-                final ParseResult<Exp> m2 = primaryExp(pos + 1);
+                final ParseResult<Exp> m2 = callExp(pos + 1);
                 result = new BinOpExp(result, op, m2.result());
                 pos = m2.nextPos();
             } catch (ParseException e) {
@@ -150,7 +150,7 @@ public class Parser {
                     throw new ParseException("Expected + or -");
                 }
                 final ParseResult<Exp> m2 = multExp(pos + 1);
-                result = new BinOpExp(result, op, m2.result);
+                result = new BinOpExp(result, op, m2.result());
                 pos = m2.nextPos();
             } catch (ParseException e) {
                 shouldRun = false;
@@ -159,6 +159,7 @@ public class Parser {
         return new ParseResult<Exp>(result, pos);
     } // addExp
     
+    //exp ::= add_exp
     public ParseResult<Exp> exp(final int startPos) throws ParseException {
         return addExp(startPos);
     }
@@ -190,10 +191,10 @@ public class Parser {
             assertTokenIs(expression.nextPos(), new SemiColonToken());
             AssignStmt assign = new AssignStmt(name, expression.result());
             return new ParseResult<Stmt>(assign, expression.nextPos() + 1);
-        } else if (token instanceof PrintToken) {
+        } else if (token instanceof PrintlnToken) {
             ParseResult<Exp> expression = exp(startPos + 1);
             assertTokenIs(expression.nextPos(), new SemiColonToken());
-            PrintStmt print = new PrintStmt(expression.result());
+            PrintlnStmt print = new PrintlnStmt(expression.result());
             return new ParseResult<Stmt>(print, expression.nextPos() + 1);
         } else if (token instanceof ReturnToken) {
             ParseResult<Optional<Exp>> opExpression;

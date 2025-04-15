@@ -279,22 +279,137 @@ public class Parser {
         }
     } // stmt
 
-    // program ::= stmt*
-    public ParseResult<Program> program(final int startPos) {
-        final List<Stmt> stmts = new ArrayList<Stmt>();
-        int pos = startPos;
+    // comma_vardec ::= [vardec (`,` vardec)*]
+    public ParseResult<List<Vardecl>> commaVardec(final int startPos) throws ParseException {
+        final ParseResult<Vardecl> firstVar = vardec(startPos);
+        List<Vardecl> result = new ArrayList<>();
+        result.add(firstVar.result());
         boolean shouldRun = true;
+        int pos = firstVar.nextPos();
         while (shouldRun) {
             try {
-                final ParseResult<Stmt> stmtRes = stmt(pos);
-                stmts.add(stmtRes.result());
-                pos = stmtRes.nextPos();
+                if (getToken(pos) instanceof CommaToken) {
+                    final ParseResult<Vardecl> nextVar = vardec(pos + 1);
+                    result.add(nextVar.result());
+                    pos = nextVar.nextPos();
+                } else {
+                    shouldRun = false;
+                }
             } catch (ParseException e) {
                 shouldRun = false;
             }
         }
-        return new ParseResult<Program>(new Program(stmts), pos);
-    } // program
+        return new ParseResult<List<Vardecl>>(result, pos);
+    } // comma_vardec
+    
+     // methoddef ::= `method` methodname `(` comma_vardec `)` type `{` stmt* `}`
+    public ParseResult<MethodDef> methoddef(final int startPos) throws ParseException {
+        assertTokenIs(startPos, new MethodToken());
+        assertTokenIs(startPos + 1, new IdentifierToken());
+        String methodName = ((IdentifierToken) getToken(startPos + 1)).name();
+        ParseResult<List<Vardecl>> varDecs = commaVardec(startPos + 2);
+        assertTokenIs(varDecs.nextPos(), new RParenToken());
+        ParseResult<Type> returnType = type(varDecs.nextPos() + 1);
+        assertTokenIs(returnType.nextPos(), new LBraceToken());
+        List<Stmt> stmts = new ArrayList<>();
+        int pos = returnType.nextPos();
+        while (!(getToken(pos) instanceof RBraceToken)) {
+            ParseResult<Stmt> stmtRes = stmt(pos);
+            stmts.add(stmtRes.result());
+            pos = stmtRes.nextPos();
+        }
+        return new ParseResult<MethodDef>(new MethodDef(methodName, varDecs.result(), returnType.result(), stmts), pos + 1);
+    } // methoddef
+
+    // constructor ::= `init` `(` comma_vardec `)` `{` [`super` `(` comma_exp `)` `;` ] stmt* `}`
+    public ParseResult<Constructor> constructor(final int startPos) throws ParseException {
+        assertTokenIs(startPos, new InitToken());
+        ParseResult<List<Vardecl>> varDecs = commaVardec(startPos + 1);
+        assertTokenIs(varDecs.nextPos(), new RParenToken());
+        assertTokenIs(varDecs.nextPos() + 1, new LBraceToken());
+        Optional<Exp> superCall = Optional.empty();
+        if (getToken(varDecs.nextPos() + 1) instanceof SuperToken) {
+            assertTokenIs(varDecs.nextPos() + 2, new LParenToken());
+            ParseResult<Exp> expRes = commaExp(varDecs.nextPos() + 3);
+            assertTokenIs(expRes.nextPos(), new RParenToken());
+            superCall = Optional.of(expRes.result());
+            assertTokenIs(expRes.nextPos(), new SemiColonToken());
+        }
+        List<Stmt> stmts = new ArrayList<>();
+        int pos = superCall.isPresent() ? varDecs.nextPos() + 5 : varDecs.nextPos() + 3;
+        while (!(getToken(pos) instanceof RBraceToken)) {
+            ParseResult<Stmt> stmtRes = stmt(pos);
+            stmts.add(stmtRes.result());
+            pos = stmtRes.nextPos();
+        }
+        return new ParseResult<Constructor>(new Constructor(varDecs.result(), superCall, stmts), pos + 1);
+    } // constructor
+    
+    // classdef ::= `class` classname [`extends` classname] `{` (vardec `;`)* constructor methoddef* `}`
+    public ParseResult<ClassDef> classdef(final int startPos) throws ParseException {
+        assertTokenIs(startPos, new ClassToken());
+        String className = ((IdentifierToken) getToken(startPos + 1)).name();
+        Optional<String> extendsClass = Optional.empty();
+        int pos = startPos + 2;
+        if (getToken(pos) instanceof ExtendsToken) {
+            extendsClass = Optional.of(((IdentifierToken) getToken(pos + 1)).name());
+            pos = pos + 2;
+        }
+        assertTokenIs(pos, new LBraceToken());
+        List<Vardecl> varDecs = new ArrayList<>();
+        List<MethodDef> methodDefs = new ArrayList<>();
+        List<Constructor> constructors = new ArrayList<>();
+        while (!(getToken(pos) instanceof RBraceToken())) {
+            if (getToken(pos) instanceof ConstructorToken) {
+                ParseResult<Constructor> constructorRes = constructor(pos);
+                constructors.add(constructorRes.result());
+                pos = constructorRes.nextPos();
+            } else if (getToken(pos) instanceof MethodToken) {
+                ParseResult<MethodDef> methodRes = methoddef(pos);
+                methodDefs.add(methodRes.result());
+                pos = methodRes.nextPos();
+            } else {
+                ParseResult<Vardecl> varRes = vardec(pos);
+                varDecs.add(varRes.result());
+                pos = varRes.nextPos();
+            }
+        }
+        return new ParseResult<ClassDef>(new ClassDef(className, extendsClass, varDecs, constructors, methodDefs), pos + 1);
+    } // classdef
+
+    // program ::= classdef* stmt+ stmt+ is the entry point
+    public ParseResult<Program> program(final int startPos) {
+    final List<ClassDef> classDefs = new ArrayList<ClassDef>();
+    int pos = startPos;
+    boolean classDefsParsed = false;
+    while (true) {
+        try {
+            final ParseResult<ClassDef> classDefRes = classdef(pos);
+            classDefs.add(classDefRes.result());
+            pos = classDefRes.nextPos();
+        } catch (ParseException e) {
+            classDefsParsed = true;
+            break;
+        }
+    }
+
+    if (!classDefsParsed) {
+        throw new ParseException("Expected at least one class definition.");
+    }
+
+    final List<Stmt> stmts = new ArrayList<Stmt>();
+    boolean shouldRun = true;
+    while (shouldRun) {
+        try {
+            final ParseResult<Stmt> stmtRes = stmt(pos);
+            stmts.add(stmtRes.result());
+            pos = stmtRes.nextPos();
+        } catch (ParseException e) {
+            shouldRun = false;
+        }
+    }
+    return new ParseResult<Program>(new Program(classDefs, stmts), pos);
+}   // program
 
     public Program parseWholeProgram() throws ParseException {
         final ParseResult<Program> p = program(0);

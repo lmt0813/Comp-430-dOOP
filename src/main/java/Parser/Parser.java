@@ -225,6 +225,34 @@ public class Parser {
         } else if (token instanceof BreakToken &&
             readToken(startPos + 1) instanceof SemiColonToken) {
             return new ParseResult<>(new BreakStmt(), startPos + 2);
+        } else if (token instanceof IfToken) {
+            assertTokenIs(startPos + 1, new LParenToken());
+            final ParseResult<Exp> cond = exp(startPos + 2);
+            assertTokenIs(cond.nextPos(), new RParenToken());
+            final ParseResult<Stmt> thenStmt = stmt(cond.nextPos() + 1);
+        
+            final Token maybeElse = readToken(thenStmt.nextPos());
+            if (maybeElse instanceof ElseToken) {
+                final ParseResult<Stmt> elseStmt = stmt(thenStmt.nextPos() + 1);
+                return new ParseResult<>(new IfStmt(cond.result(), thenStmt.result(), Optional.of(elseStmt.result())), elseStmt.nextPos());
+            } else {
+                return new ParseResult<>(new IfStmt(cond.result(), thenStmt.result(), Optional.empty()), thenStmt.nextPos());
+            }
+        } else if (token instanceof WhileToken) {
+            assertTokenIs(startPos + 1, new LParenToken());
+            final ParseResult<Exp> cond = exp(startPos + 2);
+            assertTokenIs(cond.nextPos(), new RParenToken());
+            final ParseResult<Stmt> body = stmt(cond.nextPos() + 1);
+            return new ParseResult<>(new WhileStmt(cond.result(), body.result()), body.nextPos());
+        } else if (token instanceof LBraceToken) {
+            List<Stmt> stmts = new ArrayList<>();
+            int current = startPos + 1;
+            while (!(readToken(current) instanceof RBraceToken)) {
+                final ParseResult<Stmt> s = stmt(current);
+                stmts.add(s.result());
+                current = s.nextPos();
+            }
+            return new ParseResult<>(new BlockStmt(stmts), current + 1);
         } else {
             throw new ParseException("Expected statement; got: " + token);
         }

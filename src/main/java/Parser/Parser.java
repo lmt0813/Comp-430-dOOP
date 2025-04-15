@@ -12,7 +12,7 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public Token readToken(final int pos) throws ParseException {
+    public Token getToken(final int pos) throws ParseException {
         if (pos < 0 || pos >= tokens.length) {
             throw new ParseException("Ran out of tokens");
         } else {
@@ -23,7 +23,7 @@ public class Parser {
     //comma_exp ::= [exp (`,` exp)*]
     public ParseResult<Exp> commaExp(final int startPos) throws ParseException{
         final ParseResult<Exp> m = exp(startPos);
-        List<Exp> result;
+        List<Exp> result = new ArrayList<>();
         result.add(m.result());
         boolean shouldRun = true;
         int pos = m.nextPos();
@@ -54,7 +54,7 @@ public class Parser {
     public ParseResult<Exp> primaryExp(final int startPos) throws ParseException {
         final Token t = getToken(startPos);
         if (t instanceof IdentifierToken id) {
-            t = getToken(startPos + 1)
+            t = getToken(startPos + 1);
             if(t instanceof LParenToken){
                 final ParseResult<Exp> e = commaExp(startPos + 1);
                 assertTokenIs(e.nextPos(), new RParenToken());
@@ -80,13 +80,13 @@ public class Parser {
 
         } else if (t instanceof PrintlnToken) {
             assertTokenIs(startPos + 1, new LParenToken());
-            final ParseResult<Exp> inner = exp(startPos + 2);
-            assertTokenIs(inner.nextPos(), new RParenToken());
-            return new ParseResult<Exp>(new PrintExp(inner.result()), inner.nextPos() + 1);
+            final ParseResult<Exp> print = exp(startPos + 2);
+            assertTokenIs(print.nextPos(), new RParenToken());
+            return new ParseResult<Exp>(new PrintExp(print.result()), print.nextPos() + 1);
     
         } else if (t instanceof NewToken) {
-            final Token next = getToken(startPos + 1);
-            if (!(next instanceof IdentifierToken id)) {
+            t = getToken(startPos + 1);
+            if (!(t instanceof IdentifierToken id)) {
                 throw new ParseException("Expected class name after `new`");
             }
             assertTokenIs(startPos + 2, new LParenToken());
@@ -198,7 +198,7 @@ public class Parser {
      	`{` stmt* `}` Block     
     */
     public ParseResult<Stmt> stmt(final int startPos) throws ParseException {
-        final Token token = readToken(startPos);
+        final Token token = getToken(startPos);
         if (token instanceof IdentifierToken id) {
             String name = id.name;
             assertTokenIs(startPos + 1, new EqualsToken());
@@ -233,7 +233,7 @@ public class Parser {
             assertTokenIs(cond.nextPos(), new RParenToken());
             final ParseResult<Stmt> thenStmt = stmt(cond.nextPos() + 1);
         
-            final Token maybeElse = readToken(thenStmt.nextPos());
+            final Token maybeElse = getToken(thenStmt.nextPos());
             if (maybeElse instanceof ElseToken) {
                 final ParseResult<Stmt> elseStmt = stmt(thenStmt.nextPos() + 1);
                 return new ParseResult<>(new IfStmt(cond.result(), thenStmt.result(), Optional.of(elseStmt.result())), elseStmt.nextPos());
@@ -249,7 +249,7 @@ public class Parser {
         } else if (token instanceof LBraceToken) {
             List<Stmt> stmts = new ArrayList<>();
             int current = startPos + 1;
-            while (!(readToken(current) instanceof RBraceToken)) {
+            while (!(getToken(current) instanceof RBraceToken)) {
                 final ParseResult<Stmt> s = stmt(current);
                 stmts.add(s.result());
                 current = s.nextPos();

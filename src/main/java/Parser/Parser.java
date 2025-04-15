@@ -54,8 +54,7 @@ public class Parser {
     public ParseResult<Exp> primaryExp(final int startPos) throws ParseException {
         final Token t = getToken(startPos);
         if (t instanceof IdentifierToken id) {
-            t = getToken(startPos + 1);
-            if(t instanceof LParenToken){
+            if(getToken(startPos + 1) instanceof LParenToken){
                 final ParseResult<Exp> e = commaExp(startPos + 1);
                 assertTokenIs(e.nextPos(), new RParenToken());
                 return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
@@ -82,14 +81,13 @@ public class Parser {
             assertTokenIs(print.nextPos(), new RParenToken());
             return new ParseResult<Exp>(new PrintExp(print.result()), print.nextPos() + 1);
         } else if (t instanceof NewToken) {
-            t = getToken(startPos + 1);
-            if (!(t instanceof IdentifierToken id)) {
+            if (!(getToken(startPos + 1) instanceof IdentifierToken id)) {
                 throw new ParseException("Expected class name after `new`");
             }
             assertTokenIs(startPos + 2, new LParenToken());
             final ParseResult<Exp> m = commaExp(startPos + 3);
             assertTokenIs(m.nextPos(), new RParenToken());
-            return new ParseResult<Exp>(new Exp(id.name(), m.result()),m.nextPos() + 1);
+            return new ParseResult<Exp>(new NewExp(id.name(), m.result()),m.nextPos() + 1);
         } else {
             throw new ParseException("Expected primary expression at position: " + startPos);
         }

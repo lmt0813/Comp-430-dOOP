@@ -369,7 +369,7 @@ public class Parser {
                 methodDefs.add(methodRes.result());
                 pos = methodRes.nextPos();
             } else {
-                ParseResult<Vardecl> varRes = vardec(pos);
+                ParseResult<Vardecl> varRes = vardecl(pos);
                 varDecs.add(varRes.result());
                 pos = varRes.nextPos();
             }

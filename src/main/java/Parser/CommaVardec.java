@@ -2,4 +2,4 @@ package Parser;
 
 import java.util.List;
 
-public record CommaVardec(List<Vardec> vardecs) {}
+public record CommaVardec(List<Vardecl> vardecs) {}

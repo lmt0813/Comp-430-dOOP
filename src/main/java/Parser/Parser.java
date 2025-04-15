@@ -197,7 +197,7 @@ public class Parser {
     public ParseResult<Stmt> stmt(final int startPos) throws ParseException {
         final Token token = getToken(startPos);
         if (token instanceof IdentifierToken id) {
-            String name = id.name;
+            String name = id.name();
             assertTokenIs(startPos + 1, new EqualsToken());
             ParseResult<Exp> expression = exp(startPos + 2);
             assertTokenIs(expression.nextPos(), new SemiColonToken());
@@ -222,7 +222,7 @@ public class Parser {
             return new ParseResult<Stmt>(new ReturnStmt(opExpression.result()),
                                          opExpression.nextPos() + 1);
         } else if (token instanceof BreakToken &&
-            readToken(startPos + 1) instanceof SemiColonToken) {
+            getToken(startPos + 1) instanceof SemiColonToken) {
             return new ParseResult<>(new BreakStmt(), startPos + 2);
         } else if (token instanceof IfToken) {
             assertTokenIs(startPos + 1, new LParenToken());
@@ -252,8 +252,30 @@ public class Parser {
                 current = s.nextPos();
             }
             return new ParseResult<>(new BlockStmt(stmts), current + 1);
+        } else if (token instanceof IntToken ||
+        token instanceof BooleanToken ||
+        token instanceof StringToken) {
+
+            final String type;
+            if (token instanceof IntToken) type = "int";
+            else if (token instanceof BooleanToken) type = "Boolean";
+            else if (token instanceof StringToken) type = "String";
+            else throw new ParseException("Unexpected type token");
+
+            final Token next = getToken(startPos + 1);
+            if (!(next instanceof IdentifierToken id)) {
+                throw new ParseException("Expected identifier after type");
+            }
+            assertTokenIs(startPos + 2, new SemiColonToken());
+            return new ParseResult<>(new VarDeclStmt(type, id.name()), startPos + 3);
         } else {
-            throw new ParseException("Expected statement; got: " + token);
+            try {
+                ParseResult<Exp> expression = exp(startPos);
+                assertTokenIs(expression.nextPos(), new SemiColonToken());
+                return new ParseResult<>(new ExpStmt(expression.result()), expression.nextPos() + 1);
+            } catch (ParseException e) {
+                throw new ParseException("Expected statement; got: " + token);
+            }
         }
     } // stmt
 

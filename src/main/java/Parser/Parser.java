@@ -23,7 +23,8 @@ public class Parser {
     //comma_exp ::= [exp (`,` exp)*]
     public ParseResult<Exp> commaExp(final int startPos) throws ParseException{
         final ParseResult<Exp> m = exp(startPos);
-        Exp result = m.result();
+        List<Exp> result;
+        result.add(m.result());
         boolean shouldRun = true;
         int pos = m.nextPos();
         while(shouldRun) {
@@ -31,14 +32,15 @@ public class Parser {
                 Token t = getToken(pos);
                 if (t instanceof CommaToken) {
                     final ParseResult<Exp> m2 = commaExp(pos + 1);
-                    result = m2.result();
+                    result.add(m2.result());
                     pos = m2.nextPos();
                 }
             } catch (ParseException e) {
                 shouldRun = false;
             }
         }
-        return new ParseResult<Exp>(result, pos);
+        Exp finalExp = new commaExp(result);
+        return new ParseResult<Exp>(finalExp, pos);
         }//commaExp
 
     /*primary_exp ::=

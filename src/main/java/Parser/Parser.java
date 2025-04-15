@@ -272,7 +272,7 @@ public class Parser {
             try {
                 ParseResult<Exp> expression = exp(startPos);
                 assertTokenIs(expression.nextPos(), new SemiColonToken());
-                return new ParseResult<>(new ExpStmt(expression.result()), expression.nextPos() + 1);
+                return new ParseResult<Stmt>(new ExpStmt(expression.result()), expression.nextPos() + 1);
             } catch (ParseException e) {
                 throw new ParseException("Expected statement; got: " + token);
             }
@@ -301,15 +301,15 @@ public class Parser {
         }
         return new ParseResult<List<Vardecl>>(result, pos);
     } // comma_vardec
-    
+
      // methoddef ::= `method` methodname `(` comma_vardec `)` type `{` stmt* `}`
     public ParseResult<MethodDef> methoddef(final int startPos) throws ParseException {
         assertTokenIs(startPos, new MethodToken());
-        assertTokenIs(startPos + 1, new IdentifierToken());
+        assertTokenIs(startPos + 1, new IdentifierToken("name"));
         String methodName = ((IdentifierToken) getToken(startPos + 1)).name();
         ParseResult<List<Vardecl>> varDecs = commaVardec(startPos + 2);
         assertTokenIs(varDecs.nextPos(), new RParenToken());
-        ParseResult<Type> returnType = type(varDecs.nextPos() + 1);
+        ParseResult<Type> returnType = getToken(varDecs.nextPos() + 1);
         assertTokenIs(returnType.nextPos(), new LBraceToken());
         List<Stmt> stmts = new ArrayList<>();
         int pos = returnType.nextPos();
@@ -360,7 +360,7 @@ public class Parser {
         List<MethodDef> methodDefs = new ArrayList<>();
         List<Constructor> constructors = new ArrayList<>();
         while (!(getToken(pos) instanceof RBraceToken())) {
-            if (getToken(pos) instanceof ConstructorToken) {
+            if (getToken(pos) instanceof ClassToken) {
                 ParseResult<Constructor> constructorRes = constructor(pos);
                 constructors.add(constructorRes.result());
                 pos = constructorRes.nextPos();
@@ -369,7 +369,7 @@ public class Parser {
                 methodDefs.add(methodRes.result());
                 pos = methodRes.nextPos();
             } else {
-                ParseResult<Vardecl> varRes = vardecl(pos);
+                ParseResult<Vardecl> varRes = vardec(pos);
                 varDecs.add(varRes.result());
                 pos = varRes.nextPos();
             }

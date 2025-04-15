@@ -60,30 +60,27 @@ public class Parser {
                 assertTokenIs(e.nextPos(), new RParenToken());
                 return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
             }else {
-                return new ParseResult<Exp>(new IdExp(id.name), startPos + 1);
+                return new ParseResult<Exp>(new IdExp(id.name()), startPos + 1);
             }
         } else if (t instanceof IntegerToken i) {
-            return new ParseResult<Exp>(new IntExp(i.value), startPos + 1);
+            return new ParseResult<Exp>(new IntExp(i.value()), startPos + 1);
         } else if (t instanceof LParenToken) {
             final ParseResult<Exp> e = exp(startPos + 1);
             assertTokenIs(e.nextPos(), new RParenToken());
             return new ParseResult<Exp>(e.result(), e.nextPos() + 1);
         } else if (t instanceof ThisToken) {
             return new ParseResult<Exp>(new ThisExp(), startPos + 1);
-    
-        } else if (t instanceof BooleanToken b) {
-            if(b.value == true){
+        } else if (t instanceof BooleanLiteralToken b) {
+            if(b.value() == true){
                 return new ParseResult<Exp>(new BooleanExp(true), startPos + 1);
             } else {
                 return new ParseResult<Exp>(new BooleanExp(false), startPos + 1);
             }
-
         } else if (t instanceof PrintlnToken) {
             assertTokenIs(startPos + 1, new LParenToken());
             final ParseResult<Exp> print = exp(startPos + 2);
             assertTokenIs(print.nextPos(), new RParenToken());
             return new ParseResult<Exp>(new PrintExp(print.result()), print.nextPos() + 1);
-    
         } else if (t instanceof NewToken) {
             t = getToken(startPos + 1);
             if (!(t instanceof IdentifierToken id)) {
@@ -92,7 +89,7 @@ public class Parser {
             assertTokenIs(startPos + 2, new LParenToken());
             final ParseResult<Exp> m = commaExp(startPos + 3);
             assertTokenIs(m.nextPos(), new RParenToken());
-            return new ParseResult<Exp>(new Exp(id.name, m.result()),m.nextPos() + 1);
+            return new ParseResult<Exp>(new Exp(id.name(), m.result()),m.nextPos() + 1);
         } else {
             throw new ParseException("Expected primary expression at position: " + startPos);
         }
@@ -106,13 +103,15 @@ public class Parser {
         int pos = m.nextPos();
         while (shouldRun) {
             try {
-                final Token dotToken = getToken(pos);
-                final IdentifierToken method = getToken(pos + 1);
-                assertTokenIs(pos + 2, new LParenToken());
-                ParseResult<Exp> m2 = commaExp(pos + 3);
-                assertTokenIs(m2.nextPos(), new RParenToken());
-                result = new callExp(result, method.name, m2.result());
-                pos = m2.nextPos() + 1;
+                if(getToken(pos + 1) instanceof PeriodToken){
+                    final IdentifierToken method = (IdentifierToken)getToken(pos + 1);
+                    if(getToken(pos + 2) instanceof LParenToken){
+                        ParseResult<Exp> m2 = commaExp(pos + 3);
+                        assertTokenIs(m2.nextPos(), new RParenToken());
+                        result = new callExp(result, method.name(), m2.result());
+                        pos = m2.nextPos() + 1;
+                    }
+                }
             } catch (ParseException e) {
                 shouldRun = false;
             }

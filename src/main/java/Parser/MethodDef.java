@@ -2,4 +2,9 @@ package Parser;
 
 import java.util.List;
 
-public record MethodDef(String methodName, List<Vardecl> result, Type result2, List<Stmt> stmts2) implements Stmt {}
+public record MethodDef(
+    String name,
+    List<Vardecl> parameters,  // Vardecl uses String type
+    String returnType,        // String type name
+    List<Stmt> body
+) {}

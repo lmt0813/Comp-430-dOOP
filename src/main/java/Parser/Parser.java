@@ -258,7 +258,7 @@ public class Parser {
 
             final String type;
             if (token instanceof IntToken) type = "int";
-            else if (token instanceof BooleanToken) type = "Boolean";
+            else if (token instanceof BooleanToken) type = "boolean";
             else if (token instanceof StringToken) type = "String";
             else throw new ParseException("Unexpected type token");
 
@@ -284,7 +284,7 @@ public class Parser {
     
         final String type;
         if (token instanceof IntToken) type = "int";
-        else if (token instanceof BooleanToken) type = "Boolean";
+        else if (token instanceof BooleanToken) type = "boolean";
         else if (token instanceof StringToken) type = "String";
         else throw new ParseException("Expected type token, got: " + token);
     
@@ -320,22 +320,57 @@ public class Parser {
     } // comma_vardec
 
      // methoddef ::= `method` methodname `(` comma_vardec `)` type `{` stmt* `}`
-    public ParseResult<MethodDef> methoddef(final int startPos) throws ParseException {
+     public ParseResult<MethodDef> methoddef(final int startPos) throws ParseException {
+        // Check 'method' keyword
         assertTokenIs(startPos, new MethodToken());
-        assertTokenIs(startPos + 1, new IdentifierToken("name"));
-        String methodName = ((IdentifierToken) getToken(startPos + 1)).name();
-        ParseResult<List<Vardecl>> varDecs = commaVardec(startPos + 2);
-        assertTokenIs(varDecs.nextPos(), new RParenToken());
-        ParseResult<Type> returnType = getToken(varDecs.nextPos() + 1);
-        assertTokenIs(returnType.nextPos(), new LBraceToken());
-        List<Stmt> stmts = new ArrayList<>();
-        int pos = returnType.nextPos();
-        while (!(getToken(pos) instanceof RBraceToken)) {
-            ParseResult<Stmt> stmtRes = stmt(pos);
-            stmts.add(stmtRes.result());
-            pos = stmtRes.nextPos();
+        
+        // Get method name
+        if (!(getToken(startPos + 1) instanceof IdentifierToken)) {
+            throw new ParseException("Expected method name identifier");
         }
-        return new ParseResult<MethodDef>(new MethodDef(methodName, varDecs.result(), returnType.result(), stmts), pos + 1);
+        String methodName = ((IdentifierToken)getToken(startPos + 1)).name();
+        
+        // Get parameters
+        assertTokenIs(startPos + 2, new LParenToken());
+        ParseResult<List<Vardecl>> params = commaVardec(startPos + 3);
+        assertTokenIs(params.nextPos(), new RParenToken());
+        
+        // Get return type as String
+        String returnType;
+        int typePos = params.nextPos() + 1;
+        Token typeToken = getToken(typePos);
+        
+        if (typeToken instanceof IntToken) {
+            returnType = "int";
+        } else if (typeToken instanceof BooleanToken) {
+            returnType = "boolean"; 
+        } else if (typeToken instanceof StringToken) {
+            returnType = "String";
+        } else if (typeToken instanceof VoidToken) {
+            returnType = "void";
+        } else if (typeToken instanceof IdentifierToken) {
+            returnType = ((IdentifierToken)typeToken).name();
+        } else {
+            throw new ParseException("Expected return type, got: " + typeToken);
+        }
+        
+        // Verify and skip past the type token
+        int bodyStartPos = typePos + 1;
+        assertTokenIs(bodyStartPos, new LBraceToken());
+        
+        // Parse method body
+        List<Stmt> stmts = new ArrayList<>();
+        int pos = bodyStartPos + 1;
+        while (!(getToken(pos) instanceof RBraceToken)) {
+            ParseResult<Stmt> stmt = stmt(pos);
+            stmts.add(stmt.result());
+            pos = stmt.nextPos();
+        }
+        
+        return new ParseResult<>(
+            new MethodDef(methodName, params.result(), returnType, stmts),
+            pos + 1
+        );
     } // methoddef
 
     // constructor ::= `init` `(` comma_vardec `)` `{` [`super` `(` comma_exp `)` `;` ] stmt* `}`
@@ -395,7 +430,7 @@ public class Parser {
     } // classdef
 
     // program ::= classdef* stmt+ stmt+ is the entry point
-    public ParseResult<Program> program(final int startPos) {
+    public ParseResult<Program> program(final int startPos) throws ParseException {
     final List<ClassDef> classDefs = new ArrayList<ClassDef>();
     int pos = startPos;
     boolean classDefsParsed = false;

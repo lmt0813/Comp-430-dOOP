@@ -267,7 +267,7 @@ public class Parser {
                 throw new ParseException("Expected identifier after type");
             }
             assertTokenIs(startPos + 2, new SemiColonToken());
-            return new ParseResult<>(new VarDeclStmt(type, id.name()), startPos + 3);
+            return new ParseResult<>(new Vardecl(type, id.name()), startPos + 3);
         } else {
             try {
                 ParseResult<Exp> expression = exp(startPos);
@@ -278,6 +278,23 @@ public class Parser {
             }
         }
     } // stmt
+
+    public ParseResult<Vardecl> vardec(final int startPos) throws ParseException {
+        final Token token = getToken(startPos);
+    
+        final String type;
+        if (token instanceof IntToken) type = "int";
+        else if (token instanceof BooleanToken) type = "Boolean";
+        else if (token instanceof StringToken) type = "String";
+        else throw new ParseException("Expected type token, got: " + token);
+    
+        final Token next = getToken(startPos + 1);
+        if (!(next instanceof IdentifierToken id)) {
+            throw new ParseException("Expected identifier after type");
+        }
+    
+        return new ParseResult<>(new Vardecl(type, id.name()), startPos + 2);
+    }
 
     // comma_vardec ::= [vardec (`,` vardec)*]
     public ParseResult<List<Vardecl>> commaVardec(final int startPos) throws ParseException {

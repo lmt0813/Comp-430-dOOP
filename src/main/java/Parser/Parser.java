@@ -34,6 +34,8 @@ public class Parser {
                     final ParseResult<Exp> m2 = commaExp(pos + 1);
                     result.add(m2.result());
                     pos = m2.nextPos();
+                } else {
+                    shouldRun = false;
                 }
             } catch (ParseException e) {
                 shouldRun = false;

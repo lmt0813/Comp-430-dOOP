@@ -1,3 +1,3 @@
 package Parser;
 
-public interface Type {}
+public record Type(String type) implements Stmt{}

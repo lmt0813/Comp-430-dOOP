@@ -35,7 +35,7 @@ public class Parser {
                     result.add(m2.result());
                     pos = m2.nextPos();
                 } else {
-                    shouldRun = false;
+                    throw new ParseException("Expected , or Exp");
                 }
             } catch (ParseException e) {
                 shouldRun = false;

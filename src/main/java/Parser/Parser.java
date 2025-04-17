@@ -1,5 +1,6 @@
 package Parser;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +36,7 @@ public class Parser {
                     result.add(m2.result());
                     pos = m2.nextPos();
                 } else {
-                    throw new ParseException("Expected , or Exp");
+                    throw new ParseException("Expected ,");
                 }
             } catch (ParseException e) {
                 shouldRun = false;
@@ -322,13 +323,30 @@ public class Parser {
     } // comma_vardec
 
      // methoddef ::= `method` methodname `(` comma_vardec `)` type `{` stmt* `}`
+    public String type(Token t){
+        String type = "";
+        try {
+            if(t instanceof IntToken){
+                return type = "int";
+            } else if(t instanceof StringToken){
+                return type = "string";
+            } else if(t instanceof BooleanToken){
+                return type = "boolean";
+            } else if(t instanceof VoidToken){
+                return type = "void";
+            }
+        } catch (ParseException e) {
+            throw new ParseException("Expected type def");
+        }
+    }
+
     public ParseResult<MethodDef> methoddef(final int startPos) throws ParseException {
         assertTokenIs(startPos, new MethodToken());
         assertTokenIs(startPos + 1, new IdentifierToken("name"));
         String methodName = ((IdentifierToken) getToken(startPos + 1)).name();
         ParseResult<List<Vardecl>> varDecs = commaVardec(startPos + 2);
         assertTokenIs(varDecs.nextPos(), new RParenToken());
-        String returnType = ((IdentifierToken)getToken(startPos + 3)).name();
+        String returnType = type(getToken(startPos + 3));
         assertTokenIs(startPos + 4, new LBraceToken());
         List<Stmt> stmts = new ArrayList<>();
         int pos = startPos + 4;

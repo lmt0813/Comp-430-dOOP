@@ -1,6 +1,5 @@
 package Parser;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -323,19 +322,16 @@ public class Parser {
     } // comma_vardec
 
      // methoddef ::= `method` methodname `(` comma_vardec `)` type `{` stmt* `}`
-    public String type(Token t){
-        String type = "";
-        try {
-            if(t instanceof IntToken){
-                return type = "int";
-            } else if(t instanceof StringToken){
-                return type = "string";
-            } else if(t instanceof BooleanToken){
-                return type = "boolean";
-            } else if(t instanceof VoidToken){
-                return type = "void";
-            }
-        } catch (ParseException e) {
+    public String type(Token t) throws ParseException{
+        if(t instanceof IntToken){
+            return "int";
+        } else if(t instanceof StringToken){
+            return "string";
+        } else if(t instanceof BooleanToken){
+            return "boolean";
+        } else if(t instanceof VoidToken){
+            return "void";
+        } else {
             throw new ParseException("Expected type def");
         }
     }

@@ -31,6 +31,16 @@ public class Typechecker {
             } else {
                 throw new TypeErrorException("Guard non-boolean");
             }
+        } else if (stmt instanceof IfStmt is) {
+            Type condType = typeOf(is.guard(), env);
+            if (!(condType instanceof BoolType)) {
+                throw new TypeErrorException("if condition must be boolean");
+            }
+            typecheck(is.thenBranch(), env);
+            if (is.elseBranch().isPresent()) {
+                typecheck(is.elseBranch().get(), env);
+            }
+            return env;
         } else if (stmt instanceof BlockStmt block) {
             Map<Variable, Type> innerEnv = env;
             // for (int index = 0; index < block.stmts.size(); index++) {

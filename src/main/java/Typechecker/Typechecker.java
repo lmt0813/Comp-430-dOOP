@@ -4,6 +4,7 @@ import java.util.Map;
 
 import Parser.BinOpExp;
 import Parser.Exp;
+import Parser.IfStmt;
 import Parser.IntExp;
 import Parser.Stmt;
 import Tokenizer.PlusOp;

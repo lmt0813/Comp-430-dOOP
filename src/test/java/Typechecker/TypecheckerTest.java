@@ -10,13 +10,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import Parser.BinOpExp;
-import Parser.BooleanExp;
-import Parser.Exp;
-import Parser.IfStmt;
-import Parser.IntExp;
-import Parser.Stmt;
-import Tokenizer.PlusOp;
+import Parser.*;
+import Tokenizer.*;
 
 public class TypecheckerTest {
     @Test
@@ -114,6 +109,30 @@ public class TypecheckerTest {
         Program p = new Program(stmt);
         assertThrows(TypeErrorException.class, () -> {
             Typechecker.typechecks(p);
+        });
+    }
+
+    @Test
+    public void testVarExpInScope() throws TypeErrorException {
+        Variable x = new Variable("x");
+        Exp e = new VarExp(x);
+
+        Map<Variable, Type> env = new HashMap<>();
+        env.put(x, new IntType());
+
+        Type result = Typechecker.typeOf(e, env);
+        assertTrue(result instanceof IntType);
+    }
+
+    @Test
+    public void testVarExpNotInScope() {
+        Variable x = new Variable("x");
+        Exp e = new VarExp(x);
+
+        Map<Variable, Type> env = new HashMap<>(); 
+
+        assertThrows(TypeErrorException.class, () -> {
+            Typechecker.typeOf(e, env);
         });
     }
 

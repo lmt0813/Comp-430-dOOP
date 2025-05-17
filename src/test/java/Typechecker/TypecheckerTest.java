@@ -100,4 +100,21 @@ public class TypecheckerTest {
             Typechecker.typeOf(e, new HashMap<>());
         });
     }
+
+    @Test
+    public void testValidProgramVarDecl() throws TypeErrorException {
+        Stmt stmt = new VarDecStmt(new IntType(), new Variable("x"), new IntExp(5));
+        Program p = new Program(stmt);
+        Typechecker.typechecks(p);
+    }
+
+    @Test
+    public void testInvalidProgramTypeMismatch() {
+        Stmt stmt = new VarDecStmt(new BoolType(), new Variable("flag"), new IntExp(1));
+        Program p = new Program(stmt);
+        assertThrows(TypeErrorException.class, () -> {
+            Typechecker.typechecks(p);
+        });
+    }
+
 }

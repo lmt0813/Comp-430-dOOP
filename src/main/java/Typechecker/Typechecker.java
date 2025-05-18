@@ -13,12 +13,6 @@ public class Typechecker {
         final Map<Variable, Type> retval = new HashMap<Variable, Type>(env);
         retval.put(var, type);
         return retval;
-        // if (!retval.containsKey(var)) {
-        //     retval.put(var, type);
-        //     return retval;
-        // } else {
-        //     throw new TypeErrorException("variable already in scope: " + var);
-        // }
     }
     
     public static Map<Variable, Type> typecheck(Stmt stmt, Map<Variable, Type> env) throws TypeErrorException {
@@ -40,9 +34,7 @@ public class Typechecker {
             }
             return env;
         } else if (stmt instanceof BlockStmt block) {
-            Map<Variable, Type> innerEnv = env;
-            // for (int index = 0; index < block.stmts.size(); index++) {
-            //     Stmt innerStmt = block.get(index);                
+            Map<Variable, Type> innerEnv = env;              
             for (Stmt innerStmt : block.stmts()) {
                 innerEnv = typecheck(innerStmt, innerEnv);
             }
@@ -78,19 +70,14 @@ public class Typechecker {
         } else if (e instanceof BinOpExp boe) {
             Type leftType = typeOf(boe.left(), env);
             Type rightType = typeOf(boe.right(), env);
-            // int + int = int
-            // (leftType.get, boe.op, rightType.get) match {
-            //   case (IntType, PlusOp, IntType) => IntType
-            //   case (IntType, LessThanOp, IntType) => BoolType
-            //   case (BoolType, AndOp, BoolType) => BoolType
-            // }
+
             if (boe.op() instanceof PlusOp &&
                 leftType instanceof IntType &&
                 rightType instanceof IntType) {
                 return new IntType();
             } else if (boe.op() instanceof LessThanOp &&
                        leftType instanceof IntType &&
-                       rightType instanceof IntType) { // int < int = bool
+                       rightType instanceof IntType) {
                 return new BoolType();
             } else if (boe.op() instanceof AndOp &&
                        leftType instanceof BoolType &&

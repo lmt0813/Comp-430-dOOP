@@ -14,7 +14,7 @@ public class Typechecker {
         retval.put(var, type);
         return retval;
     }
-    
+
     public static Map<Variable, Type> typecheck(Stmt stmt, Map<Variable, Type> env) throws TypeErrorException {
         if (stmt instanceof WhileStmt ws) {
             if (typeOf(ws.guard(), env) instanceof BoolType) {
@@ -34,13 +34,16 @@ public class Typechecker {
             }
             return env;
         } else if (stmt instanceof BlockStmt block) {
-            Map<Variable, Type> innerEnv = env;              
+            Map<Variable, Type> innerEnv = env;
             for (Stmt innerStmt : block.stmts()) {
                 innerEnv = typecheck(innerStmt, innerEnv);
             }
             return env;
         } else if (stmt instanceof VarDecStmt vds) {
             final Type receivedType = typeOf(vds.exp(), env);
+            if (receivedType instanceof VoidType) {
+                throw new TypeErrorException("Void cannot be used as a value");
+            }
             if (receivedType.equals(vds.type())) {
                 return addMap(env, vds.var(), receivedType);
             } else {
@@ -54,7 +57,6 @@ public class Typechecker {
 
     public static Map<String, ClassDef> classEnv = new HashMap<>();
 
-            
     public static Type typeOf(final Exp e, final Map<Variable, Type> env) throws TypeErrorException {
         if (e instanceof VarExp ve) {
             final Variable name = ve.v();
@@ -72,16 +74,16 @@ public class Typechecker {
             Type rightType = typeOf(boe.right(), env);
 
             if (boe.op() instanceof PlusOp &&
-                leftType instanceof IntType &&
-                rightType instanceof IntType) {
+                    leftType instanceof IntType &&
+                    rightType instanceof IntType) {
                 return new IntType();
             } else if (boe.op() instanceof LessThanOp &&
-                       leftType instanceof IntType &&
-                       rightType instanceof IntType) {
+                    leftType instanceof IntType &&
+                    rightType instanceof IntType) {
                 return new BoolType();
             } else if (boe.op() instanceof AndOp &&
-                       leftType instanceof BoolType &&
-                       rightType instanceof BoolType) {
+                    leftType instanceof BoolType &&
+                    rightType instanceof BoolType) {
                 return new BoolType();
             } else {
                 throw new TypeErrorException("Bad operator");

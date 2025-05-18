@@ -130,7 +130,7 @@ public class TypecheckerTest {
         Variable x = new Variable("x");
         Exp e = new VarExp(x);
 
-        Map<Variable, Type> env = new HashMap<>(); 
+        Map<Variable, Type> env = new HashMap<>();
 
         assertThrows(TypeErrorException.class, () -> {
             Typechecker.typeOf(e, env);
@@ -190,6 +190,14 @@ public class TypecheckerTest {
         assertThrows(TypeErrorException.class, () -> {
             Typechecker.typeOf(e, new HashMap<>());
         });
+    }
+
+    @Test
+    public void testVoidUsedAsValueInVarDecl() {
+        Exp voidExp = new PrintExp(new IntExp(1));
+        Stmt stmt = new VarDecStmt( new IntType(), new Variable("x"), voidExp);
+        Program p = new Program(stmt);
+        assertThrows(TypeErrorException.class, () -> Typechecker.typechecks(p));
     }
 
 }

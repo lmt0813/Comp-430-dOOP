@@ -6,6 +6,7 @@ import Parser.*;
 import Tokenizer.*;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class Typechecker {
     public static Map<Variable, Type> addMap(Map<Variable, Type> env, Variable var, Type type) {
@@ -58,6 +59,9 @@ public class Typechecker {
             throw new TypeErrorException("No such statement: " + stmt);
         }
     }
+
+    public static Map<String, ClassDef> classEnv = new HashMap<>();
+
             
     public static Type typeOf(final Exp e, final Map<Variable, Type> env) throws TypeErrorException {
         if (e instanceof VarExp ve) {
@@ -95,6 +99,34 @@ public class Typechecker {
             } else {
                 throw new TypeErrorException("Bad operator");
             }
+        } else if (e instanceof NewExp ne) {
+            String className = ne.name();
+
+            if (!classEnv.containsKey(className)) {
+                throw new TypeErrorException("No such class: " + className);
+            }
+
+            ClassDef classDef = classEnv.get(className);
+            Constructor constructor = classDef.constructor();
+
+            List<Type> expectedTypes = constructor.paramTypes();
+            List<Exp> actualArgs = ne.args();
+
+            if (expectedTypes.size() != actualArgs.size()) {
+                throw new TypeErrorException("Constructor for class " + className + " expects " +
+                        expectedTypes.size() + " arguments, but got " + actualArgs.size());
+            }
+
+            for (int i = 0; i < expectedTypes.size(); i++) {
+                Type expected = expectedTypes.get(i);
+                Type actual = typeOf(actualArgs.get(i), env);
+                if (!actual.equals(expected)) {
+                    throw new TypeErrorException("Constructor argument " + i + " for class " + className +
+                            " expected " + expected + ", but got " + actual);
+                }
+            }
+
+            return new ClassType(className);
         } else {
             throw new TypeErrorException("Unknown expression");
         }

@@ -1,5 +1,6 @@
 package Typechecker;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -133,6 +134,61 @@ public class TypecheckerTest {
 
         assertThrows(TypeErrorException.class, () -> {
             Typechecker.typeOf(e, env);
+        });
+    }
+
+    @Test
+    public void testValidNewExp() throws TypeErrorException {
+        NewExp e = new NewExp("A", List.of(new IntExp(5), new TrueExp()));
+
+        Constructor actor = new Constructor(List.of(new IntType(), new BoolType()));
+        ClassDef classA = new ClassDef("A", actor);
+        Typechecker.classEnv.put("A", classA);
+
+        Type result = Typechecker.typeOf(e, new HashMap<>());
+        assertEquals(new ClassType("A"), result);
+    }
+
+    private void defineClass(String name, List<Type> paramTypes) {
+        Constructor actor = new Constructor(paramTypes);
+        ClassDef def = new ClassDef(name, actor);
+        Typechecker.classEnv.put(name, def);
+    }
+
+    @Test
+    public void testNewExpWrongArity() {
+        defineClass("A", List.of(new IntType(), new BoolType()));
+
+        NewExp e = new NewExp("A", List.of(
+                new IntExp(5)));
+
+        assertThrows(TypeErrorException.class, () -> {
+            Typechecker.typeOf(e, new HashMap<>());
+        });
+    }
+
+    @Test
+    public void testNewExpWrongType() {
+        defineClass("A", List.of(new IntType(), new BoolType()));
+
+        NewExp e = new NewExp("A", List.of(
+                new TrueExp(),
+                new FalseExp()));
+
+        assertThrows(TypeErrorException.class, () -> {
+            Typechecker.typeOf(e, new HashMap<>());
+        });
+    }
+
+    @Test
+    public void testNewExpUnknownClass() {
+
+        NewExp e = new NewExp("A", List.of(
+                new IntExp(5),
+                new BooleanExp(true)));
+
+        assertThrows(TypeErrorException.class, () -> {
+            Typechecker.typeOf(e, new HashMap<>());
         });
     }
 
